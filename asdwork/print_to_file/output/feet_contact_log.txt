@@ -1,0 +1,54 @@
+PROGRAM RAN: 11-09-2015 12:55:45
+
+--- Feet Touching Ground == TRUE ---
+
+--- Feet Touching Ground == TRUE ---
+
+--- Feet Touching Ground == FALSE ---
+
+--- Feet Touching Ground == TRUE ---
+
+PROGRAM TERMINATED
+
+
+
+PROGRAM RAN: 11-09-2015 12:56:25
+
+--- Feet Touching Ground == TRUE ---
+
+--- Feet Touching Ground == TRUE ---
+
+--- Feet Touching Ground == TRUE ---
+
+PROGRAM TERMINATED
+
+
+
+PROGRAM RAN: 11-09-2015 12:56:47
+
+--- Feet Touching Ground == TRUE ---
+
+--- Feet Touching Ground == TRUE ---
+
+--- Feet Touching Ground == TRUE ---
+
+--- Feet Touching Ground == TRUE ---
+
+--- Feet Touching Ground == FALSE ---
+
+--- Feet Touching Ground == TRUE ---
+
+--- Feet Touching Ground == TRUE ---
+
+--- Feet Touching Ground == TRUE ---
+
+--- Feet Touching Ground == FALSE ---
+
+--- Feet Touching Ground == FALSE ---
+
+--- Feet Touching Ground == FALSE ---
+
+PROGRAM TERMINATED
+
+
+

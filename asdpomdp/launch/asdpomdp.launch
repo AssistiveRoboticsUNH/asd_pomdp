@@ -1,0 +1,37 @@
+<launch>
+	<param name="use_sim_time" value="false" />
+
+	<node name="asdinterface" pkg="asdinterface" type="asdinterface" /> 
+	<node name="wave_nao_work" pkg="node_controllers" type="wave_nao_work" />
+	
+	<node name="export" pkg="rename" type="export" />
+	<node name="gaze_tracker" pkg="attention_tracker" type="estimate" >
+		<param name="face_model" value="$(find attention_tracker)/share/shape_predictor_68_face_landmarks.dat" />
+		<remap from="/image" to="/nao_robot/camera/top/camera/image_raw"/>
+	</node>
+	<node name="gaze_cont" pkg="asdpomdp" type="gaze_contingency" />
+
+	<node name="audio_cont" pkg="asdpomdp" type="audio_contingency" />
+	
+	<include file="$(find openni2_launch)/launch/openni2.launch" />
+
+	<node pkg="node_controllers" name="data_logger" type="data_logger" output="screen">
+			<param name="rosbag_record_args" 
+			   value="--output-prefix=nao_asd_auto 
+					/camera/depth/points 
+					/action_finished 
+					/nao_robot/microphone/naoqi_microphone/audio_raw 
+					/nao_robot/camera/top/camera/image_raw 
+					/nao_robot/camera/top/camera/camera_info 
+					/tf
+				"/>
+			<param name="bag_path" value="$(env HOME)/bag"/>
+	</node>
+	
+	<node name="audio_record" pkg="node_controllers" type="audio_record">
+		<param name="bag_path" value="$(env HOME)/bag"/>
+	</node>
+
+	
+
+</launch>

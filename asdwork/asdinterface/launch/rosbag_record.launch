@@ -1,0 +1,4 @@
+<launch>
+	<node pkg="rosbag" type="record" name="rosbag_record_video"
+	      args="record /nao_robot/camera/top/camera/image_raw" />
+</launch>

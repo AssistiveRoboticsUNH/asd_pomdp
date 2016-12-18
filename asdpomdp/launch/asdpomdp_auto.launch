@@ -1,0 +1,20 @@
+<launch>
+	<param name="use_sim_time" value="false" />
+
+	<node name="asdinterface" pkg="asdinterface" type="asdinterface" output="screen" /> 
+	<node name="wave_nao_work" pkg="node_controllers" type="wave_nao_work" />
+	
+	<node name="export" pkg="rename" type="export" />
+	<node name="gaze_tracker" pkg="attention_tracker" type="estimate" >
+		<param name="face_model" value="$(find attention_tracker)/share/shape_predictor_68_face_landmarks.dat" />
+		<remap from="/image" to="/nao_robot/camera/top/camera/image_raw"/>
+	</node>
+	<node name="gaze_cont" pkg="asdpomdp" type="gaze_contingency" />
+
+	<node name="audio_cont" pkg="asdpomdp" type="audio_contingency" output="screen" />
+	
+	<include file="$(find openni2_launch)/launch/openni2.launch" />
+	
+	<node name="pomdp" pkg="asdpomdp" type="asdpomdp" output="screen" />
+
+</launch>
