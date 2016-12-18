@@ -1,0 +1,10 @@
+<launch>
+
+<node   pkg="rosbag" 
+        type="rosbag" 
+        name="rosbag_record_video"
+        args="  record 
+                -o $(find rename) 
+                /camera/front/image_raw" />
+
+</launch>

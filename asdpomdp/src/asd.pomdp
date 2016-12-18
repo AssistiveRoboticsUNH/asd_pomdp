@@ -1,0 +1,92 @@
+# This is a POMDP file for the greeting ABA therapy
+# Madison Clark-Turner
+
+discount : 0.9
+values : reward
+states : compliant noncompliant
+actions : sd prompt reward abort
+observations : 4
+
+start : 0.5 0.5
+
+T : sd : compliant : compliant 1.0
+T : sd : compliant : noncompliant 0.0
+
+T : prompt : compliant : compliant 1.0
+T : prompt : compliant : noncompliant 0.0
+
+#T : reward : compliant : compliant 1.0
+#T : reward : compliant : noncompliant 0.0
+T : reward : compliant : compliant 0.5
+T : reward : compliant : noncompliant 0.5
+
+T : abort : compliant : compliant 0.5
+T : abort : compliant : noncompliant 0.5
+
+
+T : sd : noncompliant : compliant 0.0
+T : sd : noncompliant : noncompliant 1.0
+
+T : prompt : noncompliant : compliant 0.0
+T : prompt : noncompliant : noncompliant 1.0
+
+#T : reward : noncompliant : compliant 0.0
+#T : reward : noncompliant : noncompliant 1.0
+T : reward : noncompliant : compliant 0.5
+T : reward : noncompliant : noncompliant 0.5
+
+T : abort : noncompliant : compliant 0.5
+T : abort : noncompliant : noncompliant 0.5
+
+O : abort : compliant : 0 0.25
+O : abort : compliant : 1 0.25
+O : abort : compliant : 2 0.25
+O : abort : compliant : 3 0.25
+
+O : prompt : compliant : 0 0.129
+O : prompt : compliant : 1 0.032
+O : prompt : compliant : 2 0.71
+O : prompt : compliant : 3 0.129
+
+#O: reward : compliant : 0 0.748
+#O: reward : compliant : 1 0.252
+
+O : reward : compliant : 0 0.25
+O : reward : compliant : 1 0.25
+O : reward : compliant : 2 0.25
+O : reward : compliant : 3 0.25
+
+O : sd : compliant : 0 0.3604
+O : sd : compliant : 1 0.072
+O : sd : compliant : 2 0.3874
+O : sd : compliant : 3 0.1802
+
+O : abort : noncompliant : 0 0.25
+O : abort : noncompliant : 1 0.25
+O : abort : noncompliant : 2 0.25
+O : abort : noncompliant : 3 0.25
+
+O : prompt : noncompliant : 0 0.857
+O : prompt : noncompliant : 1 0.143
+O : prompt : noncompliant : 2 0.0
+O : prompt : noncompliant : 3 0.0
+
+O : reward : noncompliant : 0 0.25
+O : reward : noncompliant : 1 0.25
+O : reward : noncompliant : 2 0.25
+O : reward : noncompliant : 3 0.25
+
+O : sd : noncompliant : 0 0.905
+O : sd : noncompliant : 1 0.095
+O : sd : noncompliant : 2 0.0
+O : sd : noncompliant : 3 0.0
+
+R : sd : * : * : * -1
+#-2.038
+R : prompt : * : * : * -2
+#-3
+
+R : reward : compliant : * : * 10
+R : reward : noncompliant : * : * -10
+R : abort : compliant : * : * -10
+R : abort : noncompliant : * : * 10 
