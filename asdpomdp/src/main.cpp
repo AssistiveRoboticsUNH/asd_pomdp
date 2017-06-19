@@ -1,14 +1,13 @@
 /*
 main.cpp
 Madison Clark-Turner
-12/17/2016
+1/24/2017
 */
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <string>
 #include <iostream>
-#include "pomdpexecutor.h"
-
+#include "../include/asdpomdp/pomdpexecutor.h"
 
 int main(int argc, char** argv){
 	ros::init(argc, argv, "asd_pomdp");
