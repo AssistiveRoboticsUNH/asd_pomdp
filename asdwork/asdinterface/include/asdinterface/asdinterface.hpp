@@ -1,3 +1,8 @@
+/*
+asdinterface.hpp
+Madison Clark-Turner
+1/24/2017
+*/
 #ifndef ASDINTERFACE_H
 #define ASDINTERFACE_H
 
@@ -34,7 +39,7 @@ class ASDInterface : public QWidget{
 	Q_OBJECT
 
 	public:
-		std::string name = "Name";
+		std::string name = "";
 		explicit ASDInterface(QWidget *parent = 0);
 		~ASDInterface();
 		void imageCallback(const sensor_msgs::ImageConstPtr& msg);
@@ -60,12 +65,11 @@ class ASDInterface : public QWidget{
 		void on_AngleHead_clicked();
 		void on_ToggleLife_clicked();
 		
-		void on_ShutDown_clicked();
 		void on_Start_clicked();
+		void on_ShutDown_clicked();
+		void on_Run_clicked();
 		
 		void on_MyClock_overflow();
-		
-
 		
 	protected:
 		void paintEvent(QPaintEvent *event);
@@ -76,20 +80,19 @@ class ASDInterface : public QWidget{
 		QBasicTimer Mytimer;
 		QTimer *timer;
 		QString MyClockTimetext;
+
 		ros::NodeHandle n;
-		ros::Publisher pub_speak, pub_pose, pub_custom, pub_actFinished, pub_move, pub_record, pub_run;//, pub_gaze;
-		ros::ServiceClient client_stiff, client_record_start, client_record_stop, life_enable, life_disable, client_rest;
-		ros::Subscriber sub_custom, sub_cam, sub_nextAct;
-		std_msgs::Int8 actionFinished;
+		ros::Publisher pub_custom, pub_move, pub_pose, pub_run, pub_speak;
+		ros::ServiceClient client_stiff, client_record_start, client_record_stop, client_wakeup, client_rest, life_enable, life_disable;
+		ros::Subscriber sub_cam, sub_custom, sub_nextAct;
+
 		QImage NaoImg;
 		int count;
 		bool recording = false;
 		bool life_on = true;
-		std::ofstream fout;
 		custom_msgs::control_states controlstate;
 
 		tf::TransformListener listener;
-
 };
 
 #endif
