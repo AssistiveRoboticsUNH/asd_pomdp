@@ -1,20 +1,34 @@
 <launch>
 	<param name="use_sim_time" value="false" />
-
+	<remap from="camera" to="nao_robot/camera/top/camera/image_raw"/>
 	<node name="asdinterface" pkg="asdinterface" type="asdinterface" output="screen" /> 
-	<node name="wave_nao_work" pkg="node_controllers" type="wave_nao_work" />
+		
+	<node name="wave_nao_work" pkg="node_controllers" type="wave_nao_work" output="screen" />
 	
+	<!-- +++++++++Setup Gaze+++++++++ -->
 	<node name="export" pkg="rename" type="export" />
 	<node name="gaze_tracker" pkg="attention_tracker" type="estimate" >
 		<param name="face_model" value="$(find attention_tracker)/share/shape_predictor_68_face_landmarks.dat" />
 		<remap from="/image" to="/nao_robot/camera/top/camera/image_raw"/>
 	</node>
-	<node name="gaze_cont" pkg="asdpomdp" type="gaze_contingency" />
+	<node name="gaze_observer" pkg="asdpomdp" type="gaze_observer" />
 
-	<node name="audio_cont" pkg="asdpomdp" type="audio_contingency" output="screen" />
+	<!-- +++++++++Setup Audio+++++++++ -->
+	<node name="disable_expressive_listening_server" pkg="asdpomdp" type="disableexpressivelistening.py" output="screen"/>
+	<node name="audio_observer" pkg="asdpomdp" type="audio_observer" output="screen" />
+
+	<!-- +++++++++Setup Gestures+++++++++ -->
+	<arg name="tracker_name" default="tracker" />
+  
+	<node name="handtracker" output="screen" pkg="openni2_tracker" type="handtracker" >
+		<param name="tf_prefix" value="$(arg tracker_name)" />
+		<param name="relative_frame" value="/$(arg tracker_name)_depth_frame" />
+	</node>
 	
-	<include file="$(find openni2_launch)/launch/openni2.launch" />
+	<!-- TF Static Transforms to World -->
+	<node pkg="tf" type="static_transform_publisher" name="world_to_tracker" args=" 0 0 1.25 1.5707 0 1.7707  /world /$(arg tracker_name)_depth_frame 100"/> 
 	
+	<!-- +++++++++Setup POMDP+++++++++ -->
 	<node name="pomdp" pkg="asdpomdp" type="asdpomdp" output="screen" />
 
 </launch>
