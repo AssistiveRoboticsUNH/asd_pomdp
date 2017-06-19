@@ -1,9 +1,9 @@
 /*
 pomdpexecutor.cpp
 Madison Clark-Turner
-12/17/2016
+1/24/2017
 */
-#include "pomdpexecutor.h"
+#include "../include/asdpomdp/pomdpexecutor.h"
 
 POMDPExecutor::POMDPExecutor(ros::NodeHandle node, std::string pomdpFilename, std::string vectorFilename): n(node)
 {	
@@ -17,16 +17,16 @@ POMDPExecutor::POMDPExecutor(ros::NodeHandle node, std::string pomdpFilename, st
 	endTime[1] = startTime[1]+4;
 	endTime[2] = startTime[2]+0;
 
-
+	//setup ROS variables
 	r = new ros::Rate(30);
-	sub_gaze = n.subscribe("/asdpomdp/gaze_data", 100, &POMDPExecutor::gazeCallback, this);
+	sub_gaze = n.subscribe("/asdpomdp/gaze", 100, &POMDPExecutor::gazeCallback, this);
 	sub_words = n.subscribe("/asdpomdp/audio", 100, &POMDPExecutor::audioCallback, this);
-	sub_gesture = n.subscribe("/asdpomdp/gesture_contingency", 100, &POMDPExecutor::gestureCallback, this);
+	sub_gesture = n.subscribe("/asdpomdp/gesture", 100, &POMDPExecutor::gestureCallback, this);
 	sub_run = n.subscribe("/asdpomdp/run_asd_auto", 100, &POMDPExecutor::runCallback, this);
 
-	pub_nextAct = n.advertise<std_msgs::Int8>("/next_action", 100);
+	pub_nextAct = n.advertise<std_msgs::Int8>("/asdpomdp/next_action", 100);
 
-	//setup POMDP
+	//setup POMDP and policy
 	pomdp = new POMDP(pomdpFilename);
 	policy = new POMDPPolicy(pomdp, vectorFilename);
 
@@ -53,7 +53,8 @@ int POMDPExecutor::convertToIndex(std::vector<int> obs){
 }
 
 void POMDPExecutor::run(){
-	//begin the therapy session
+	//begin a session of the behavioral intervention 
+	ROS_INFO("Beginning behavioral intervention.");
 	callAction(0);
 	int nextact = updatePOMDP(0);
 	while(nextact >= 0 && nextact < 2){
@@ -63,21 +64,20 @@ void POMDPExecutor::run(){
 		ros::Duration(startTime[nextact]).sleep();
 		callAction(3);
 	}
-	ROS_INFO("run ended");
+	ROS_INFO("Ending behavioral intervention.");
 	policy->reset();
 }
 
 void POMDPExecutor::callAction(int action){
-	//execute an action
+	//executes an action
 	std_msgs::Int8 performAction;
 	performAction.data = action;
 	pub_nextAct.publish(performAction);
-	ROS_INFO("action called: %d", action);
+	ROS_INFO("executed action: %d", action);
 }
 
 int POMDPExecutor::updatePOMDP(int action){
-	//receive observation
-	
+	// Listen for observations and update the POMDP.
 	if(action >= 0 && action < 3){
 		std::vector<int> obs = getObservations(action);
 		if(obs.size() == 0){
@@ -86,7 +86,8 @@ int POMDPExecutor::updatePOMDP(int action){
 
 		// Update Policy
 		int obsIndex = convertToIndex(obs);
-		printf("current obs: %d\n", obsIndex);
+		printf("Received observation: %d\n", obsIndex);
+		policy->printBelief();
 		policy->updateBeliefState(obsIndex, action);
 		policy->printBelief();
 		// Suggest next Action
@@ -99,33 +100,42 @@ int POMDPExecutor::updatePOMDP(int action){
 
 std::vector<int> POMDPExecutor::getObservations(int act){
 	std::vector<int> obs;
+
 	ros::Time begin = ros::Time::now();
 	ros::Time startRecord = begin + ros::Duration(startTime[act]);
 	ros::Time endRecord = begin + ros::Duration(endTime[act]);
-	//do not receive observations while performing action
+
+	// Delay from action start to beginning of listening period.
 	while(ros::ok() && ros::Time::now() < startRecord){
 		ros::spinOnce();
 	}
+	// Reset observation information prior to listening period.
 	averageGazeDistance = 0;
 	numberOfPacketsReceived = 0;
-	audioContingency = 0;
-	gestureContingency = 0;
-	//begin receving actions
+	audioObserved = 0;
+	gestureObserved = 0;
+
 	while(ros::ok() && ros::Time::now() < endRecord){
+		// Gather observtaion information during listening period.
 		ros::spinOnce();
 	}
 	if(!ros::ok()){
 		return obs;
 	}
 	
-	//get whether audio contingency is detected
-	obs.push_back(audioContingency);
 	//get whether gaze is directed at robot
 	if(numberOfPacketsReceived > 0)
 		obs.push_back((averageGazeDistance/numberOfPacketsReceived) < threshold);
 	else
 		obs.push_back(0);
 	
+	//get whether audio was observed
+	obs.push_back(audioObserved);
+	
+	//get whether a gesture was observed.
+	obs.push_back(gestureObserved);
+
+	ROS_INFO("OBSERVATION: gaze-%d audio-%d gesture-%d", obs[0], obs[1], obs[2]);
 	return obs;
 }
 
@@ -136,12 +146,11 @@ void POMDPExecutor::gazeCallback(const std_msgs::Float64::ConstPtr& msg){
 
 void POMDPExecutor::audioCallback(const std_msgs::Bool::ConstPtr& msg){
 	if(msg->data)
-		audioContingency = 1;
+		audioObserved = 1;
 }
 
-void POMDPExecutor::gestureCallback(const std_msgs::Bool::ConstPtr& msg){
-	if(msg->data)
-		gestureContingency = 1;
+void POMDPExecutor::gestureCallback(const std_msgs::String::ConstPtr& msg){
+	gestureObserved = 1;
 }
 
 void POMDPExecutor::runCallback(const std_msgs::Bool::ConstPtr& msg){

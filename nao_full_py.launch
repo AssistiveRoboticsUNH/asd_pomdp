@@ -27,6 +27,11 @@
     <arg name="nao_ip"        value="$(arg nao_ip)" />
   </include>
 
+  <!-- enable bump sensors -->
+  <include file="$(find nao_apps)/launch/tactile.launch" >
+    <arg name="nao_ip"        value="$(arg nao_ip)" />
+  </include>
+
   <!-- enable speech -->
   <include file="$(find nao_apps)/launch/speech.launch" >
     <arg name="nao_ip"        value="$(arg nao_ip)" />
@@ -51,22 +56,6 @@
   <!-- Specify here all dependent settings (default top) -->
   <include file="$(find naoqi_sensors_py)/launch/camera.launch" ns="nao_robot/camera/top" >
     <arg name="nao_ip"        value="$(arg nao_ip)" />
-  </include>
-  <include file="$(find naoqi_sensors_py)/launch/camera.launch" ns="nao_robot/camera/bottom" >
-    <arg name="nao_ip"        value="$(arg nao_ip)" />
-    <arg name="source"        value="1" />
-  </include>
-
-  <!-- Load left and right sonar -->
-  <include file="$(find naoqi_sensors_py)/launch/sonar.launch" ns="nao_robot/sonar/left" >
-    <arg name="nao_ip"        value="$(arg nao_ip)" />
-    <arg name="memory_key"    value="Device/SubDeviceList/US/Left/Sensor/Value" />
-    <arg name="frame_id"      value="LSonar_frame" />
-  </include>
-  <include file="$(find naoqi_sensors_py)/launch/sonar.launch" ns="nao_robot/sonar/right" >
-    <arg name="nao_ip"        value="$(arg nao_ip)" />
-    <arg name="memory_key"    value="Device/SubDeviceList/US/Right/Sensor/Value" />
-    <arg name="frame_id"      value="RSonar_frame" />
   </include>
 
   <!-- Specify here all dependent settings (default top) -->

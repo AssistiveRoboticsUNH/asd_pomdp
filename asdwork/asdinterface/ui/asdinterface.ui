@@ -117,6 +117,19 @@
      <string>Shut_Down</string>
    </property>
   </widget>
+    <widget class="QPushButton" name="Run">
+   <property name="geometry">
+    <rect>
+     <x>420</x>
+     <y>500</y>
+     <width>173</width>
+     <height>40</height>
+    </rect>
+   </property>
+   <property name="text">
+     <string>Run</string>
+   </property>
+  </widget>
   <widget class="QPushButton" name="AngleHead">
    <property name="geometry">
     <rect>

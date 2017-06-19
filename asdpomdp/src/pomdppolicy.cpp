@@ -1,9 +1,9 @@
 /*
 pomdppolicy.cpp
 Madison Clark-Turner
-12/17/2016
+1/24/2017
 */
-#include "pomdppolicy.h"
+#include "../include/asdpomdp/pomdppolicy.h"
 
 POMDPPolicy::POMDPPolicy(POMDP* pomdp_data, const std::string filename): pomdp(pomdp_data){
 	//filename is the list of alpha vectors
@@ -67,7 +67,6 @@ int POMDPPolicy::selectAction(){
 	double maxval;
 	for(int a  = 0; a < alphas.size(); a++){
 		double val = alphas[a].m * b + alphas[a].yint;
-		std::cout << "action " << alphas[a].action << " : " << val << " : m=" << alphas[a].m << " b=" << alphas[a].yint << std::endl; 
 		if(a == 0 || val > maxval){
 			max = alphas[a];
 			maxval = val;

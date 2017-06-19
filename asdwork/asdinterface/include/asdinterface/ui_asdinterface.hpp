@@ -28,6 +28,7 @@ class Ui_ASDInterface{
 		QPushButton *Rest;
 		QPushButton *Stand;
 		QPushButton *ToggleLife;
+		QPushButton *Run;
 		QTextEdit *Name;
 		QLCDNumber *MyClock;
 		void setupUi(QWidget *ASDInterface){
@@ -47,8 +48,6 @@ class Ui_ASDInterface{
 			Command = new QPushButton(ASDInterface);
 			Command->setObjectName(QString("Command"));
 			Command->setGeometry(QRect(20, 20, blockw, blockh));
-			//Command->setAutoFillBackground(true);
-			//Command->setPalette(Pal);
 			Respond = new QPushButton(ASDInterface);
 			Respond->setObjectName(QString("Respond"));
 			Respond->setGeometry(QRect(blockw + buffer*2, buffer, blockw, blockh));
@@ -86,6 +85,9 @@ class Ui_ASDInterface{
 			ShutDown = new QPushButton(ASDInterface);
 			ShutDown->setObjectName(QString("ShutDown"));
 			ShutDown->setGeometry(QRect(blockw*2 + buffer*3, 600-blockh-buffer, blockw, blockh));
+			Run = new QPushButton(ASDInterface);
+			Run->setObjectName(QString("Run"));
+			Run->setGeometry(QRect(blockw*2 + buffer*3, blockh*4 + buffer*5, blockw, blockh));
 
 			Name = new QTextEdit(ASDInterface);
 			Name->setObjectName(QString("Name"));
@@ -120,6 +122,7 @@ class Ui_ASDInterface{
 			
 			Start->setText(QApplication::translate("ASDInterface", "Start", 0));
 			ShutDown->setText(QApplication::translate("ASDInterface", "Shut_Down", 0));
+			Run->setText(QApplication::translate("ASDInterface", "Run", 0));
 		}
 };
 

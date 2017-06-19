@@ -1,7 +1,7 @@
 /*
 pomdp.h
 Madison Clark-Turner
-12/17/2016
+1/24/2017
 */
 #ifndef POMDP_H
 #define POMDP_H

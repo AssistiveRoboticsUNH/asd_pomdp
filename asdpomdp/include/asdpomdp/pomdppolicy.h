@@ -1,7 +1,7 @@
 /*
 pomdppolicy.h
 Madison Clark-Turner
-12/17/2016
+1/24/2017
 */
 #ifndef POMDPPOLICY_H
 #define POMDPPOLICY_H

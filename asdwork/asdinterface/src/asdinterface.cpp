@@ -1,13 +1,11 @@
 /*
 asdinterface.cpp
 Madison Clark-Turner
-12/17/2016
+1/24/2017
 */
 #include "../include/asdinterface/asdinterface.hpp"
 #include "../include/asdinterface/ui_asdinterface.hpp"
 #include <string.h>
-
-
 
 /* Class Constructor: Initializes all of the QT slots and widgets, and initializes all of the subscribers,
  * publishers, and services */
@@ -23,53 +21,28 @@ ASDInterface::ASDInterface(QWidget *parent) : QWidget(parent), ui(new Ui::ASDInt
 	/* Sets up ROS */
 	ros::start();
 	count = 0; //sets count to 0 so program can go through ros::spinOnce 10 times to solve issue with seg fault
-	pub_speak = n.advertise<std_msgs::String>("/speech", 100); //publisher to make nao talk
-	pub_pose = n.advertise<naoqi_bridge_msgs::BodyPoseActionGoal>("/body_pose/goal", 100); //publisher to make nao switch poses
-	pub_move = n.advertise<nao_msgs::JointAnglesWithSpeed>("/joint_angles", 100);
-	pub_run = n.advertise<std_msgs::Bool>("/run_asd_auto", 100);
-	pub_record = n.advertise<std_msgs::Bool>("/nao_recording", 100);
 	pub_custom = n.advertise<custom_msgs::control_states>("/control_msgs", 100); // advertises state status
-	pub_actFinished = n.advertise<std_msgs::Int8>("/action_finished", 100);
-
-	client_stiff = n.serviceClient<std_srvs::Empty>("/body_stiffness/enable", 100); //service client to unstiffen nao
+	pub_move = n.advertise<nao_msgs::JointAnglesWithSpeed>("/joint_angles", 100); // publisher to set nao joint angles
+	pub_pose = n.advertise<naoqi_bridge_msgs::BodyPoseActionGoal>("/body_pose/goal", 100); // publisher to make nao switch poses
+	pub_run = n.advertise<std_msgs::Bool>("/asdpomdp/run_asd_auto", 100); // publisher to start automated behvioral intervention
+	pub_speak = n.advertise<std_msgs::String>("/speech", 100); // publisher to make nao talk
+	
+	client_stiff = n.serviceClient<std_srvs::Empty>("/body_stiffness/enable", 100); //service client to stiffen nao
 	client_record_start = n.serviceClient<std_srvs::Empty>("/data_logger/start"); // service client to start rosbag
-	client_record_stop = n.serviceClient<std_srvs::Empty>("/data_logger/stop"); //service client to stop rosbag
-	client_rest = n.serviceClient<std_srvs::Empty>("/rest"); 
-	life_enable = n.serviceClient<std_srvs::Empty>("/life/enable"); // service client to start rosbag
-	life_disable = n.serviceClient<std_srvs::Empty>("/life/disable");
+	client_record_stop = n.serviceClient<std_srvs::Empty>("/data_logger/stop"); // service client to stop rosbag
+	client_wakeup = n.serviceClient<std_srvs::Empty>("/wakeup"); // service client to place nao in rest-mode
+	client_rest = n.serviceClient<std_srvs::Empty>("/rest"); // service client to place nao in rest-mode
+	life_enable = n.serviceClient<std_srvs::Empty>("/life/enable"); // service client to enable autonomous life
+	life_disable = n.serviceClient<std_srvs::Empty>("/life/disable"); // service client to disable autonomous life
 
-	sub_cam = n.subscribe<sensor_msgs::Image>("attention_tracker/faces/image", 1, &ASDInterface::imageCallback, this); //subcriber to get image it.subscribeCamera ASDInterface::proceessGaze
+	sub_cam = n.subscribe<sensor_msgs::Image>("camera", 1, &ASDInterface::imageCallback, this); //subcriber to get image it.subscribeCamera ASDInterface::proceessGaze
 	sub_custom = n.subscribe("control_msgs", 100, &ASDInterface::controlCallback, this); // subscriber to get state status
-	sub_nextAct = n.subscribe("next_action", 100, &ASDInterface::actionCallback, this);
-
-	/* Creates file path to put timestamps in txt document */
-	std::string file_path;
-	fout.open("~/asd_data/timestmaps/timestamps.txt", std::ofstream::out | std::ofstream::app);
-	std::string timestamp;
-	timestamp = getTimeStamp();
-	fout << "UI LAUNCHED: " << timestamp << "\n\n";
+	sub_nextAct = n.subscribe("/asdpomdp/next_action", 100, &ASDInterface::actionCallback, this);
 }
 
 /* Destructor: Frees space in memory where ui was allocated */
 ASDInterface::~ASDInterface(){
 	delete ui;
-}
-
-void ASDInterface::actionCallback(const std_msgs::Int8& msg){
-	int act = msg.data;
-	centerGaze();
-	if(act == 0){
-		on_Command_clicked();
-	}
-	else if(act == 1){
-		on_Prompt_clicked();
-	}
-	else if(act == 2){
-		on_Respond_clicked();
-	}
-	else if(act == 3){
-		on_Bye_clicked();
-	}
 }
 
 /* When clock is overflowed, update time */
@@ -95,50 +68,70 @@ void ASDInterface::paintEvent(QPaintEvent *event){
 	}
 }
 
+/* Angles the nao's head so that it looks at the participant */
 void ASDInterface::centerGaze(){
-	//Tilts head to look at user
 	nao_msgs::JointAnglesWithSpeed head_angle;
 	head_angle.joint_names.push_back("HeadPitch");
 	head_angle.joint_angles.push_back(0.1);
 	head_angle.speed = 1.0;
-	ROS_INFO("Change Head Pitch");
 	pub_move.publish(head_angle);
 }
 
-/* Makes NAO stand and comment on someone entering room */
+/* Gets the current timestamp whenever it is called */
+std::string ASDInterface::getTimeStamp(){
+	time_t rawtime;
+	struct tm * timeinfo;
+	char buffer[80];
+	time (&rawtime);
+	timeinfo = localtime(&rawtime);
+	strftime(buffer,80,"%Y-%m-%d-%H-%M-%S", timeinfo);
+	std::string str(buffer);
+	return str;
+}
+
+/* Activates an action if it is called via rostopic */
+void ASDInterface::actionCallback(const std_msgs::Int8& msg){
+	int act = msg.data;
+	centerGaze();
+	if(act == 0){
+		on_Command_clicked();
+	}
+	else if(act == 1){
+		on_Prompt_clicked();
+	}
+	else if(act == 2){
+		on_Respond_clicked();
+	}
+	else if(act == 3){
+		on_Bye_clicked();
+	}
+}
+
+/* Makes the nao stand, look at the participant, and enables the nao to wave */
 void ASDInterface::on_Start_clicked(){
 	
-	/* Gets current timestamp and prints it to txt file */
-	std::string timestamp;
-	timestamp = getTimeStamp();
-	fout << "\tStart: " << timestamp << "\n";
-
-	/* Gets NAO to stiffen, standup, and start audio and rosbag recording */
+	// stiffen nao and disable autonomous life
 	naoqi_bridge_msgs::BodyPoseActionGoal pose;
 	std_srvs::Empty stiff;
 	life_disable.call(stiff);
 	life_on = false;
 	client_stiff.call(stiff);
 	
-	
-	
+	// make nao stand and look at participant
 	pose.goal.pose_name = "Stand";
 	pub_pose.publish(pose);
-
 	loopRate(40);
 	centerGaze();
 
-
+	// publish state data
 	controlstate.startrecord = true;
 	ros::Duration(0.9).sleep();
-
-	timestamp = getTimeStamp();
-	controlstate.timestamp = timestamp;
+	controlstate.timestamp = getTimeStamp();
 	pub_custom.publish(controlstate);
 }
 
 void ASDInterface::on_ToggleLife_clicked(){
-	//Toggles whether autonomous life is on
+	// toggles whether autonomous life is enabled or disabled
 	std_srvs::Empty stiff;
 	if(life_on){
 		life_disable.call(stiff);
@@ -151,37 +144,41 @@ void ASDInterface::on_ToggleLife_clicked(){
 }
 
 void ASDInterface::on_Stand_clicked(){
-	//Tells the robot to stand
+	// make the nao stand
+	/*
 	naoqi_bridge_msgs::BodyPoseActionGoal pose;
 	pose.goal.pose_name = "Stand";
-	pub_pose.publish(pose);
+	pub_pose.publish(pose);*/
+	std_srvs::Empty stiff;
+	client_wakeup.call(stiff);
 }
 
 void ASDInterface::on_Rest_clicked(){
-	//Tells the robot to rest
+	// make the nao rest
 	std_srvs::Empty stiff;
 	client_rest.call(stiff);
 }
 
 void ASDInterface::on_AngleHead_clicked(){
+	// force the nao to angle its head towards the participant
 	centerGaze();
 }
 
+void ASDInterface::on_Run_clicked(){
+	// start an automated therapy session
+	std_msgs::Bool msg;
+	msg.data = 1;
+	pub_run.publish(msg);
+}
+
 void ASDInterface::on_StartRecord_clicked(){
-	//Tells the robot to begin recording
 	std_msgs::Bool record;
 	std_srvs::Empty stiff;
 	client_record_start.call(stiff);
 	recording = true;
-	record.data = recording;
-	pub_record.publish(record);
-	/*std_msgs::Bool msg;
-	msg.data = 1;
-	pub_run.publish(msg);*/
 }
 
 void ASDInterface::on_StopRecord_clicked(){
-	//Tells the robot to stop recording
 	std_msgs::Bool record;
 	std_srvs::Empty stop;
 	if(recording)
@@ -191,20 +188,13 @@ void ASDInterface::on_StopRecord_clicked(){
 
 /* Commands patient to say Hello and wave */
 void ASDInterface::on_Command_clicked(){
-	
-	// Gets current timestamp of when button was clicked
-	std::string timestamp;
-	timestamp = getTimeStamp();
-
-	// writes timestamp of when button was clicked to file
-	fout << "\tCommand: " << timestamp << "\n";
-	
-	// makes robot say hello and pings other node to get robot to wave
 	std_msgs::String words;
-
+	name = ui->Name->toPlainText().toStdString();
 	words.data = "\\RSPD=70\\Hello, "+name+"!";
+
 	controlstate.startwave2 = true;
-	actionFinished.data = 0;
+
+	//wave and say hello
 	pub_custom.publish(controlstate);
 	loopRate(15);
 	pub_speak.publish(words);
@@ -212,76 +202,39 @@ void ASDInterface::on_Command_clicked(){
 
 /* Prompts patient, says hello, and waves  */
 void ASDInterface::on_Prompt_clicked(){
-	
-	// Gets current time stamp when button was clicked
-	std::string timestamp;
-	timestamp = getTimeStamp();
-
-	// writes timestamp of when button was clicked to file
-	fout << "\tPrompt: " << timestamp << "\n";
-	
-	// Robot greets person
 	std_msgs::String words;
-        words.data = "\\RSPD=70\\"+name+", say hello!";
+	name = ui->Name->toPlainText().toStdString();
+	words.data = "\\RSPD=70\\"+name+", say hello!";
+
 	controlstate.startwave2 = true;
-	actionFinished.data = 1;
-        pub_custom.publish(controlstate);
+
+	//wave and say hello
+	pub_custom.publish(controlstate);
 	loopRate(15);
-        pub_speak.publish(words);
+	pub_speak.publish(words);
 }
 
-/* Congratualtes patient  */
+/* Rewards patient  */
 void ASDInterface::on_Respond_clicked(){
-	// Gets current time stamp when button was clicked
-	std::string timestamp;
-	timestamp = getTimeStamp();
-
-	// writes timestamp of when button was clicked to file
-	fout << "\tRespond: " << timestamp << "\n";
-	
-	// Robot greets person
 	std_msgs::String words;
-        words.data = "\\RSPD=70\\Great Job!";
+	words.data = "\\RSPD=70\\Great Job!";
 
-	actionFinished.data = 2;
-
-
-    pub_speak.publish(words);
-    pub_actFinished.publish(actionFinished);
+	//say great job!
+	pub_speak.publish(words);
 }
 
-/* Makes NAO say goodbye */
+/* Makes nao say goodbye */
 void ASDInterface::on_Bye_clicked(){
-	
-	// Gets current time stamp when button was clicked
-	std::string timestamp;
-	timestamp = getTimeStamp();
-
-	// writes timestamp of when button was clicked to file
-	fout << "\tBye: " << timestamp << "\n";
-
-	// Makes robot say good bye and crouch
 	std_msgs::String words;
-	naoqi_bridge_msgs::BodyPoseActionGoal pose;
+	name = ui->Name->toPlainText().toStdString();
 	words.data = "\\RSPD=70\\Goodbye, "+name+".";
-	//Need to get robot to crouch//
-	pub_speak.publish(words); 
-	actionFinished.data = 3;
-	pub_actFinished.publish(actionFinished);
 
+	//say good bye
+	pub_speak.publish(words); 
 }
 
 /* Shuts down ROS and program */
 void ASDInterface::on_ShutDown_clicked(){
-		
-	// Gets current timestamp
-	std::string timestamp;
-	timestamp = getTimeStamp();
-	
-	// Prints timestamp of when button was clicked to file
-	fout << "\nUI Terminated: " << timestamp << "\n\n";
-	fout.close();
-
 	// shutsdown this node with ros and exits
 	std_srvs::Empty stop;
 	if(recording)
@@ -303,7 +256,6 @@ void ASDInterface::timerEvent(QTimerEvent*) {
 
 /* Call back to store image data from camera using ROS and converts it to QImage */
 void ASDInterface::imageCallback(const sensor_msgs::ImageConstPtr& msg){
-	//Mat2QImage
 	QImage myImage(&(msg->data[0]), msg->width, msg->height, QImage::Format_RGB888);
 	NaoImg = myImage.rgbSwapped();
 	count++;
@@ -317,25 +269,12 @@ void ASDInterface::loopRate(int loop_times){
 	}
 }
 
-/* Gets the current timestamp whenever it is called */
-std::string ASDInterface::getTimeStamp(){
-	time_t rawtime;
-	struct tm * timeinfo;
-	char buffer[80];
-	time (&rawtime);
-	timeinfo = localtime(&rawtime);
-	strftime(buffer,80,"%Y-%m-%d-%H-%M-%S", timeinfo);
-	std::string str(buffer);
-	return str;
-}
-
 /* Custom Msg Callback */
 void ASDInterface::controlCallback(const custom_msgs::control_states States){
 	centerGaze();
 	controlstate = States;
 	
 	if(!controlstate.startwave1 && !controlstate.startwave2){
-		pub_actFinished.publish(actionFinished);
 		ros::Duration(2).sleep();
 		centerGaze();
 	}
