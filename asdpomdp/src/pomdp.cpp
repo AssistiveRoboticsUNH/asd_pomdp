@@ -1,9 +1,9 @@
 /*
 pomdp.cpp
 Madison Clark-Turner
-12/17/2016
+1/24/2017
 */
-#include "pomdp.h"
+#include "../include/asdpomdp/pomdp.h"
 
 POMDP::POMDP(const std::string filename){
 	std::cout << "opened: " << filename << std::endl;
